@@ -1,0 +1,10 @@
+{
+  "name": "MiniDoodle",
+  "description": "Collaborative drawing canvas",
+  "author": "Code-and.Coffee",
+  "dependencies": {
+    "console.table": "^0.7.0",
+    "express": "4.x",
+    "socket.io": "*"
+  }
+}
