@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         //TODO: Maybe I need to create a name for this? Or use context.putImageData AFTER the img call?
         // Where is this image placd?
-        START HERE
+        // START HERE
         var img        = document.createElement('img');
             img.height = canvas.height;
             img.width  = canvas.width;
