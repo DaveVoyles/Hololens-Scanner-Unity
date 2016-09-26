@@ -14,8 +14,38 @@
     <br>
     <button type="button" id="clear" style="border: 1px solid black;">Clear</button>
     <button type="button" id="send" style="border: 1px solid black;" >Send</button>
+    <button type="button" id="sendHTML" style="border: 1px solid black;" >Send HTML</button>
 
-      <canvas id="drawing"></canvas>
-     <script src="client.js"></script>
+      <canvas id="drawing">
+              <img id="new-image">
+      </canvas>
+
+    <h2>Original Image</h2>
+    <p>
+      <img src="paragon.jpg" id="ringoImage" />
+    </p>
+    
+    <h2>Canvas Image</h2>
+    <p id="canvasHolder">
+      
+    </p>
+    
+    <h2>Canvas -&gt; PNG Image</h2>
+    <p id="pngHolder">
+      
+    </p>
+      
+    <h2>Canvas Image from PNG Image</h2>
+    <p id="canvasHolder2">
+      
+    </p>
+      
+    <h2>Canvas Image from PNG Image -&gt; PNG Image</h2>
+    <p id="pngHolder2">
+      
+    </p>
+<!--     <script src="client.js"></script>-->
+  <!--<script src="testScript.js"></script>-->
+  <script src="newClient.js"></script>
    </body>
 </html>

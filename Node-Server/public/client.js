@@ -1,10 +1,11 @@
 // http://code-and.coffee/post/2015/collaborative-drawing-canvas-node-websocket/
 // https://github.com/javaee-samples/javaee7-samples/blob/master/websocket/whiteboard/src/main/webapp/whiteboard.js#L120
 // https://stackoverflow.com/questions/13390454/receive-blob-in-websocket-and-render-as-image-in-canvas
-//      console.log('sending Img Binary: ' + bytes);
+//      log('sending Img Binary: ' + bytes);
 document.addEventListener("DOMContentLoaded", function() {
  "use strict";
   var byId = function( id ) { return document.getElementById( id ); };
+  var log = console.log.bind(console);
 
    var mouse = { 
       click: false,
@@ -81,42 +82,95 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     // Send image data OUT
+    // byId('send').onclick = DefineImageBinary;    
+    // function DefineImageBinary() {
+    //     var image  = context.getImageData(0, 0, canvas.width, canvas.height);
+    //     var buffer = new ArrayBuffer(image.data.length);
+    //     var bytes  = new Uint8Array(buffer);
+    //     for (var i=0; i<bytes.length; i++) {
+    //         bytes[i] = image.data[i];
+    //     }
+    //     socket.emit('DefineImageBinary', bytes);
+    //     log('sending image binary. bytes: ');
+    //     log(bytes);
+    // } 
+
+
+    // socket.on("DrawImageBinary", function(blob) {
+    //     log('blob is: ');
+    //     log(blob);
+
+    //     var bytes     = new Uint8Array(blob);        
+    //     var imageData = context.createImageData(canvas.width, canvas.height);
+        
+    //     for (var i=8; i<imageData.data.length; i++) {
+    //         imageData.data[i] = bytes[i];
+    //     }
+    //     context.putImageData(imageData, 0, 0);      
+
+    //     // Returning white. No pixel data. 
+    //     // Maybe I need to draw the img on top of the canvas?
+
+    //     //TODO: Or use context.putImageData AFTER the img call?
+    //     var img              = byId('new-image');
+    //     log(img);
+    //         img.height       = canvas.height;
+    //         img.width        = canvas.width;
+    //         img.style.border = "3px solid black";
+    //         img.src          = canvas.toDataURL();
+    //         log('img:');
+    //         log(img);
+    // });
+
+
+
+
+
+    socket.on("DrawImageBinary", function(image) {
+        function convertImageToCanvas(image) {
+            var canvas        = document.createElement("canvas");
+                canvas.width  = image.width;
+                canvas.height = image.height;
+                canvas.getContext("2d").drawImage(image, 0, 0);
+
+            return canvas;
+        }
+    });
+
+
+
+    function convertCanvasToImage(canvas) {
+        var image = new Image();
+            image.src = canvas.toDataURL("image/png");
+            log('convertCanvasToImage src:' + image.src );
+            log(image);
+        return image;
+    }
+
+    // // Converts canvas to an image
+    // function convertCanvasToImage(canvas, callback) {
+    //     var image = new Image();
+    //     image.onload = function() {
+    //         callback(image);
+    //     };
+    // image.src = canvas.toDataURL("image/png");
+    // }
+
+
     byId('send').onclick = DefineImageBinary;    
     function DefineImageBinary() {
-        var image  = context.getImageData(0, 0, canvas.width, canvas.height);
+        var image  = convertCanvasToImage(canvas);
         var buffer = new ArrayBuffer(image.data.length);
         var bytes  = new Uint8Array(buffer);
+
         for (var i=0; i<bytes.length; i++) {
             bytes[i] = image.data[i];
         }
+
         socket.emit('DefineImageBinary', bytes);
-        console.log('sending image binary. bytes: ');
-        console.log(bytes);
+        log('sending image binary. bytes: ');
+        log(bytes);
     } 
-
-
-    socket.on("DrawImageBinary", function(blob) {
-        console.log('blob is: ');
-        console.log(blob);
-
-        var bytes     = new Uint8Array(blob);        
-        var imageData = context.createImageData(canvas.width, canvas.height);
-        
-        for (var i=8; i<imageData.data.length; i++) {
-            imageData.data[i] = bytes[i];
-        }
-        context.putImageData(imageData, 0, 0);
-        
-        //TODO: Maybe I need to create a name for this? Or use context.putImageData AFTER the img call?
-        // Where is this image placd?
-        // START HERE
-        var img        = document.createElement('img');
-            img.height = canvas.height;
-            img.width  = canvas.width;
-            img.src    = canvas.toDataURL();
-            console.log('img:');
-            console.log(img);
-    });
 
 
 
@@ -150,15 +204,15 @@ document.addEventListener("DOMContentLoaded", function() {
     //             context.fillRect(x + dx, y + dy, 1, 1);
     //             }
     //     }
-    //     console.log("drawing image");
+    //     log("drawing image");
     // });
     
     
     
     
     // function(blob) {
-    //     console.log('blob is: ');
-    //     console.log(blob);
+    //     log('blob is: ');
+    //     log(blob);
 
     //     var bytes     = new Uint8Array(blob);        
     //     var imageData = context.createImageData(canvas.width, canvas.height);
@@ -172,8 +226,8 @@ document.addEventListener("DOMContentLoaded", function() {
     //         img.height = canvas.height;
     //         img.width  = canvas.width;
     //         img.src    = canvas.toDataURL();
-    //         console.log('img:');
-    //         console.log(img);
+    //         log('img:');
+    //         log(img);
     // });
 
    // draw line received from server
