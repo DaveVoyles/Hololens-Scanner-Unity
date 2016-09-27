@@ -1,4 +1,4 @@
-var express  = require('express'), 
+var express  = require('express'),
     app      = express(),
     http     = require('http'),
     socketIo = require('socket.io');
@@ -11,6 +11,7 @@ var fs     = require('fs');
 server.listen(8080);
 // array of all lines drawn
 var line_history = [];
+var log          = console.log.bind(console);
 
 
 var fs = require('fs');
@@ -33,6 +34,11 @@ console.log("Server running on 127.0.0.1:8080");
 io.on('connection', function (socket) {
 
 
+    socket.on('error', function(e) {
+        console.log(e);
+    });
+
+
     // Node.js 0.10+ emits finish when complete
     wstream.on('finish', function () {
     console.log('file has been written');
@@ -46,7 +52,7 @@ io.on('connection', function (socket) {
 
    // add handler for message type "draw_line".
    socket.on('draw_line', function (data) {
-      // add received line to history 
+      // add received line to history
       line_history.push(data.line);
       // send line to all clients
       io.emit('draw_line', { line: data.line });
@@ -54,17 +60,66 @@ io.on('connection', function (socket) {
 
 
 
-    
-    socket.on('ConvertedImgToBytes', function (bytes){     
+
+    socket.on('ConvertedImgToBytes', function (bytes) {
         // socket.emit('ConvertBytesToImg', bytes);
         socket.emit('image', bytes);
         //   console.table(bytes);
     });
 
 
-    socket.on('SendImageHTML', function (html){
+    // http://stackoverflow.com/questions/6182315/how-to-do-base64-encoding-in-node-js
+    socket.on('SendImageHTML', function (html) {
         console.log("SendImageHTML called: ");
-        console.log(html);
+        log(html);
+        // RETURNS:
+        // SendImageHTML called:
+        // {} 
+        socket.broadcast.emit('receiveHTML', html);
+
+
+        // var data = html.replace(/^data:image\/\w+;base64,/, "");
+        // var buf = new Buffer(data, 'base64');
+        // log(buf);
+
+        // console.log(html);
+        // var asciiBuffer = new Buffer('html', 'base64').toString('ascii');
+        // log(asciiBuffer);
+
+        // var asciiBuffer = new Buffer("SGVsbG8gV29ybGQ=", 'base64').toString('ascii');
+        // log(asciiBuffer);
+
+        // var baseBuffer = new Buffer("Hello World").toString('base64'); // This works
+        // console.log(baseBuffer);
+    });
+
+
+    socket.on('divimg', (payload) => {
+         socket.broadcast.emit('divimg', payload);
+    });
+
+
+    // socket.on('defImgBinary', function (bytes) {
+    //     console.log("defImgBinary called: ");
+
+        
+    //      var buffer = new Buffer(bytes, 'base64').toString('binary');
+    //      //log(buffer);
+    //      log(bytes);
+    // });
+
+
+    
+    socket.on('defImgBinary', function (bytes) {
+        log("defImgBinary called: ");
+        // log(bytes);
+        // RETURNS:
+        // defImgBinary called:
+        // '53721': 220,
+        // '53722': 219,
+        // '53723': 255,
+        // '53724': 229,
+        socket.broadcast.emit('ConvertBytesToImg', bytes);
     });
 
 

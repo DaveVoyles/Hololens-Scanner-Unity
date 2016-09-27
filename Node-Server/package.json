@@ -6,5 +6,8 @@
     "console.table": "^0.7.0",
     "express": "4.x",
     "socket.io": "*"
+  },
+  "devDependencies": {
+    "nodemon": "^1.10.2"
   }
 }

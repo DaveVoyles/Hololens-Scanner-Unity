@@ -1,9 +1,13 @@
 document.addEventListener("DOMContentLoaded", function() {
  "use strict";
-  var byId = function( id ) { return document.getElementById( id ); };
-  var log = console.log.bind(console);
+  var byId    = function( id ) { return document.getElementById( id ); };
+  var log     = console.log.bind(console);
   var width   = window.innerWidth;
   var height  = window.innerHeight;
+
+
+// TODO:
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
 
 ////////////////////////////////////////////////////
 
@@ -155,27 +159,59 @@ var sampleImage = document.getElementById("ringoImage"),
 
 
 
+  // NOTE Simple IO console element for socket communication
+  var outputConsole = document.querySelector('#output-console');
+  var printToConsole = function (text = '')  {
+    outputConsole.innerHTML += text + '<br/>';
+  };
+  var renderToConsole = function (element) {
+    outputConsole.appendChild(element);
+    outputConsole.innerHTML += '<br/>';
+  };
 
-   
-//   byId('send').onclick = DefineImageBinary;  
-//   function DefineImageBinary() {
-//         var image  = context.getImageData(0, 0, canvas.width, canvas.height);
-//         var buffer = new ArrayBuffer(image.data.length);
-//         var bytes  = new Uint8Array(buffer);
-//         for (var i=0; i<bytes.length; i++) {
-//             bytes[i] = image.data[i];
-//         }
-//         log('buffer');
-//         log(bytes.buffer);
-
-//         log(bytes); 
-//         socket.emit('ConvertedImgToBytes', bytes);
-//   }
 
 
 
    // SENDING
    /////////////////////////////////////////////////////////
+
+
+    byId('sendAsDiv').onclick = SendAsDiv;
+    function SendAsDiv() {
+        var encodedCanvas    = canvas.toDataURL();
+        var payload          = null;
+        var imageElement     = new Image(250, 250);
+            imageElement.src = encodedCanvas;
+
+        payload = imageElement.outerHTML;
+
+        socket.emit('divimg', payload);
+        printToConsole('Image sent.');
+    }
+
+
+
+     socket.on('divimg', function(image) {
+         log('img arrived');
+        var renderedImage = null;
+
+        if (image.indexOf('data:image/') === 0) {
+            // NOTE If we receive a base64 image, we render it as an Image
+        renderedImage = new Image(250, 250);
+        renderedImage.src = image;
+
+        } else {
+
+        // NOTE If we receive a rendered <img> element, we render it directly
+        // via document.createElement
+        renderedImage           = document.createElement('div');
+        renderedImage.innerHTML = image;
+        }
+
+        printToConsole('Received image.');
+        renderToConsole(renderedImage);
+  });
+
 
    // Convert canvas to image, and tell server to convert those bytes to an image
    byId('send').onclick = SendImageToBytes;  
@@ -192,11 +228,39 @@ var sampleImage = document.getElementById("ringoImage"),
    byId('sendHTML').onclick = SendImageHTML;  
    function SendImageHTML() {    
         var imageHTML = convertCanvasToImage(canvas); 
-        log('sending image HTM: ');
+        log('sending image HTML: ');
         log(imageHTML);
-
         socket.emit('SendImageHTML', imageHTML);
+
+
+        // var htmlAsString = "'" + imageHTML + "'";
+        // log('HTML as string: ');
+        // log(htmlAsString); // RETURNS: '[object HTMLImageElement]'
+        // socket.emit('SendImageHTML', htmlAsString);
    }
+
+
+
+  /**
+   * Converts canvas to bytes & emits web socket message
+   * @return {Uint8Array} Bytes from canvas 
+   */     
+  byId('defImgBinary').onclick = DefineImageBinary;  
+  function DefineImageBinary() {
+        var image  = context.getImageData(0, 0, canvas.width, canvas.height);
+        var buffer = new ArrayBuffer(image.data.length);
+        var bytes  = new Uint8Array(buffer);
+
+        for (var i=0; i<bytes.length; i++) {
+            bytes[i] = image.data[i];
+        }
+        log('buffer');
+        log(bytes.buffer);
+
+        log(bytes); 
+        socket.emit('defImgBinary', bytes);
+  }
+
 
 
 
@@ -205,33 +269,30 @@ var sampleImage = document.getElementById("ringoImage"),
    /////////////////////////////////////////////////////
 
     // Receive bytes from server, convert them to an image, draw image on canvas
-    socket.on("ConvertBytesToImg", function(blob) {
-        log('blob is: ');
-        log(blob);
-        var imgFromServer = ConvertBytesToImg(blob);
-        // convertCanvasToImage(imgFromServer); // TODO: Not sure if I still need this?
+    socket.on("ConvertBytesToImg", function(bytes) {
+        log('bytes are: ');
+        log(bytes); // RETURNS: Object {0: 24, 1: 24, 2: 29, 3: 255, 4: 24,....}
+                    // TODO: How do I convert that into base64?
+        var imgFromServer = ConvertBytesToImg(bytes);
+        var imageDiv = byId('incomingImg');
+        imageDiv.src = imgFromServer;
+        log(imageDiv); // RETURNS:  [object ImageData]
     });
 
 
-        // draw line received from server
+    // draw line received from server
 	socket.on('draw_line', function (data) {
         drawLines(data);
    });
 
 
     // Accept img buffer and draw it to canvas
-    socket.on("image", function(info) {
+    socket.on("imageDiv", function(info) {
         log('image data incomnig...');
+        log(info);
         var img      = new Image();
             img.src = 'data:image/jpeg;base64,' + info;
-
-
-        if (info.image) {
-            var img = new Image();
-                img.src = 'data:image/jpeg;base64,' + info.buffer; 
-            context.drawImage(img, 0, 0);
-            console.log("Image received");
-        } 
+        context.drawImage(img, 0, 0);
     });
 
    
