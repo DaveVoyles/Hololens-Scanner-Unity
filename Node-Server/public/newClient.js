@@ -35,10 +35,10 @@ document.addEventListener("DOMContentLoaded", function() {
      * @return {canvas} Canvas w/ image overlay to draw on.
      */
     function convertImageToCanvas(image) {
-        var canvas = document.createElement("canvas");
-        canvas.width = image.width;
-        canvas.height = image.height;
-        canvas.getContext("2d").drawImage(image, 0, 0);
+        var canvas        = document.createElement("canvas");
+            canvas.width  = image.width;
+            canvas.height = image.height;
+            canvas.getContext("2d").drawImage(image, 0, 0);
 
         return canvas;
     }
@@ -100,8 +100,8 @@ document.addEventListener("DOMContentLoaded", function() {
     function goBrown (){ curColor = colorBrown;  }
     function clearCanvas(){
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        //convertImageToCanvas(defaultImg);
         context.drawImage(new Image(), 0, 0); // May not need this
+        // TODO: Draw original image on here after canvas is cleared.
     }
 
    // register mouse event handlers
