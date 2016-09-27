@@ -5,11 +5,6 @@ document.addEventListener("DOMContentLoaded", function() {
   var width   = window.innerWidth;
   var height  = window.innerHeight;
 
-    byId('sendAsDiv').onclick    = SendAsDiv;
-    byId('sendAsBinary').onclick = SendAsBinary;
-
-
-// Get the image
 var sampleImage = document.getElementById("ringoImage"),
     canvas = convertImageToCanvas(sampleImage),
     image = convertCanvasToImage(canvas);
@@ -19,10 +14,15 @@ var sampleImage = document.getElementById("ringoImage"),
     // Actions
     document.getElementById("canvasHolder").appendChild(canvas);
     document.getElementById("pngHolder").appendChild(image);
-    
+
+    byId('sendAsDiv').onclick    = SendAsDiv;
+    byId('sendAsBinary').onclick = SendAsBinary;
 
 
-
+   /**
+    * Receives line data from server and replicates it onto current canvas.
+    * @param {object} data - Array of line data from server.
+    */
    function drawLines (data) {
       var line = data.line;
 
