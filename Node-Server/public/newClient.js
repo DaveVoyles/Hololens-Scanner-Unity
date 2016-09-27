@@ -1,20 +1,16 @@
 document.addEventListener("DOMContentLoaded", function() {
- "use strict";
-  var byId    = function( id ) { return document.getElementById( id ); };
-  var log     = console.log.bind(console);
-  var width   = window.innerWidth;
-  var height  = window.innerHeight;
+    "use strict";
+    var byId    = function( id ) { return document.getElementById( id ); };
+    var log     = console.log.bind(console);
+    var width   = window.innerWidth;
+    var height  = window.innerHeight;
 
-var sampleImage = document.getElementById("ringoImage"),
-    canvas = convertImageToCanvas(sampleImage),
-    image = convertCanvasToImage(canvas);
+    var defaultImg = document.getElementById("defaultImg");
+    var canvas = convertImageToCanvas(defaultImg);
     var context = canvas.getContext('2d'); 
 
 
-    // Actions
-    document.getElementById("canvasHolder").appendChild(canvas);
-    document.getElementById("pngHolder").appendChild(image);
-
+    byId("canvasHolder").appendChild(canvas);
     byId('sendAsDiv').onclick    = SendAsDiv;
     byId('sendAsBinary').onclick = SendAsBinary;
 
@@ -130,7 +126,7 @@ var sampleImage = document.getElementById("ringoImage"),
      */ 
     function SendAsBinary() {
         var encodedCanvas    = canvas.toDataURL();
-        socket.emit('imgBinary', payload);
+        socket.emit('imgBinary', encodedCanvas);
     }
 
      // receive a base64 image, we render it as an Image
@@ -166,6 +162,26 @@ var sampleImage = document.getElementById("ringoImage"),
       setTimeout(mainLoop, 25);
    }
    mainLoop();
+
+
+
+
+    // Converts canvas to an image
+    function convertCanvasToImage(canvas) {
+        var image = new Image();
+        image.src = canvas.toDataURL("image/png");
+        return image;
+    }
+
+    // Converts image to canvas; returns new canvas element
+    function convertImageToCanvas(image) {
+        var canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+
+        return canvas;
+    }
 
 
 
@@ -218,7 +234,6 @@ var sampleImage = document.getElementById("ringoImage"),
    * Converts canvas to bytes & emits web socket message
    * @return {Uint8Array} Bytes from canvas 
    */     
-  byId('defImgBinary').onclick = DefineImageBinary;  
   function DefineImageBinary() {
         var image  = context.getImageData(0, 0, canvas.width, canvas.height);
         var buffer = new ArrayBuffer(image.data.length);
