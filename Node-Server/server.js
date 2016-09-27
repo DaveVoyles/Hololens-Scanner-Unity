@@ -60,7 +60,6 @@ io.on('connection', function (socket) {
 
 
 
-
     socket.on('ConvertedImgToBytes', function (bytes) {
         // socket.emit('ConvertBytesToImg', bytes);
         socket.emit('image', bytes);
@@ -77,20 +76,6 @@ io.on('connection', function (socket) {
         // {} 
         socket.broadcast.emit('receiveHTML', html);
 
-
-        // var data = html.replace(/^data:image\/\w+;base64,/, "");
-        // var buf = new Buffer(data, 'base64');
-        // log(buf);
-
-        // console.log(html);
-        // var asciiBuffer = new Buffer('html', 'base64').toString('ascii');
-        // log(asciiBuffer);
-
-        // var asciiBuffer = new Buffer("SGVsbG8gV29ybGQ=", 'base64').toString('ascii');
-        // log(asciiBuffer);
-
-        // var baseBuffer = new Buffer("Hello World").toString('base64'); // This works
-        // console.log(baseBuffer);
     });
 
 
@@ -98,16 +83,9 @@ io.on('connection', function (socket) {
          socket.broadcast.emit('divimg', payload);
     });
 
-
-    // socket.on('defImgBinary', function (bytes) {
-    //     console.log("defImgBinary called: ");
-
-        
-    //      var buffer = new Buffer(bytes, 'base64').toString('binary');
-    //      //log(buffer);
-    //      log(bytes);
-    // });
-
+   socket.on('imgBinary', (payload) => {
+         socket.broadcast.emit('imgBinary', payload);
+    });
 
     
     socket.on('defImgBinary', function (bytes) {

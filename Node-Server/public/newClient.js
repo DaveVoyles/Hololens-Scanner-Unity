@@ -172,45 +172,48 @@ var sampleImage = document.getElementById("ringoImage"),
 
 
 
-   // SENDING
+   // SENDING & RECEIVING
    /////////////////////////////////////////////////////////
 
 
     byId('sendAsDiv').onclick = SendAsDiv;
     function SendAsDiv() {
         var encodedCanvas    = canvas.toDataURL();
-        var payload          = null;
         var imageElement     = new Image(250, 250);
             imageElement.src = encodedCanvas;
-
-        payload = imageElement.outerHTML;
+        var  payload         = imageElement.outerHTML;
 
         socket.emit('divimg', payload);
-        printToConsole('Image sent.');
     }
 
-
-
+     // Receive a rendered <img> element, we render it directly via document.createElement
      socket.on('divimg', function(image) {
-         log('img arrived');
-        var renderedImage = null;
+        var renderedImage           = document.createElement('div');
+            renderedImage.innerHTML = image;
 
-        if (image.indexOf('data:image/') === 0) {
-            // NOTE If we receive a base64 image, we render it as an Image
-        renderedImage = new Image(250, 250);
-        renderedImage.src = image;
-
-        } else {
-
-        // NOTE If we receive a rendered <img> element, we render it directly
-        // via document.createElement
-        renderedImage           = document.createElement('div');
-        renderedImage.innerHTML = image;
-        }
-
-        printToConsole('Received image.');
         renderToConsole(renderedImage);
   });
+
+
+
+    // OUTPUT: data:image/png;base64,iVBORw0K......
+    byId('sendAsBinary').onclick = SendAsBinary;
+    function SendAsBinary() {
+        var encodedCanvas    = canvas.toDataURL();
+        socket.emit('imgBinary', payload);
+    }
+
+     // receive a base64 image, we render it as an Image
+     socket.on('imgBinary', function(image) {
+        var renderedImage     = new Image(250, 250);
+            renderedImage.src = image;
+
+        renderToConsole(renderedImage);
+  });
+
+
+
+
 
 
    // Convert canvas to image, and tell server to convert those bytes to an image
