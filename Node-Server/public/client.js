@@ -1,11 +1,76 @@
-// http://code-and.coffee/post/2015/collaborative-drawing-canvas-node-websocket/
-// https://github.com/javaee-samples/javaee7-samples/blob/master/websocket/whiteboard/src/main/webapp/whiteboard.js#L120
-// https://stackoverflow.com/questions/13390454/receive-blob-in-websocket-and-render-as-image-in-canvas
-//      log('sending Img Binary: ' + bytes);
 document.addEventListener("DOMContentLoaded", function() {
- "use strict";
-  var byId = function( id ) { return document.getElementById( id ); };
-  var log = console.log.bind(console);
+    "use strict";
+    // Short-hand way of getting an element by id. USAGE: byId('element');
+    var byId    = function( id ) { return document.getElementById( id ); };
+    // Short-hand way of writing console.log. USAGE: log('string');
+    var log     = console.log.bind(console);   
+    // Namespace to send / receive socket messages
+    var socket  = io.connect();
+    var width   = window.innerWidth;
+    var height  = window.innerHeight;
+
+  // Simple IO console element for socket communication
+    var outputConsole = document.querySelector('#output-console');
+    var printToConsole = function (text = '')  {
+        outputConsole.innerHTML += text + '<br/>';
+    };
+    var renderToConsole = function (element) {
+        outputConsole.appendChild(element);
+        outputConsole.innerHTML += '<br/>';
+    };
+
+    // Takes an image, converts to canvas, places on page. We can now draw on that canvas and send via sockets.
+    var defaultImg = document.getElementById("defaultImg");
+    var canvas     = convertImageToCanvas(defaultImg);
+    var context    = canvas.getContext('2d'); 
+    byId("canvasHolder").appendChild(canvas);
+
+    // Event handlers
+    byId('sendAsDiv')  .onclick    = SendAsDiv;
+    byId('sendAsBinary').onclick = SendAsBinary;
+
+
+    /** Converts image to canvas.
+     * @param {Image} image - Image to lay on top of canvas
+     * @return {canvas} Canvas w/ image overlay to draw on.
+     */
+    function convertImageToCanvas(image) {
+        var canvas        = document.createElement("canvas");
+            canvas.width  = image.width;
+            canvas.height = image.height;
+            canvas.getContext("2d").drawImage(image, 0, 0);
+
+        return canvas;
+    }
+
+
+    /**
+     * Converts canvas to an image/
+     * @param {Canvas} canvas - Canvas to convert to Image.
+     * @return {Image} Newly converted image from canvas.
+     */
+    function convertCanvasToImage(canvas) {
+        var image     = new Image();
+            image.src = canvas.toDataURL("image/png");
+
+        return image;
+    }
+
+
+   /**
+    * Receives line data from server and replicates it onto current canvas.
+    * @param {object} data - Array of line data from server.
+    */
+   function drawLines (data) {
+      var line = data.line;
+
+      context.beginPath();
+      context.moveTo(line[0].x * width, line[0].y * height);
+      context.lineTo(line[1].x * width, line[1].y * height);
+      context.strokeStyle = curColor;
+      context.strokeStyle = data.color;
+      context.stroke();
+   }
 
    var mouse = { 
       click: false,
@@ -13,12 +78,6 @@ document.addEventListener("DOMContentLoaded", function() {
       pos: {x:0, y:0},
       pos_prev: false
    };
-   // get canvas element and create context
-   var canvas  = document.getElementById('drawing');
-   var context = canvas.getContext('2d');
-   var width   = window.innerWidth;
-   var height  = window.innerHeight;
-   var socket  = io.connect();
 
     // Colors
     var colorPurple = "#cb3594";
@@ -41,12 +100,9 @@ document.addEventListener("DOMContentLoaded", function() {
     function goBrown (){ curColor = colorBrown;  }
     function clearCanvas(){
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-         context.drawImage(new Image(), 0, 0); // May not need this
+        context.drawImage(new Image(), 0, 0); // May not need this
+        // TODO: Draw original image on here after canvas is cleared.
     }
-
-   // set canvas to full browser width/height
-   canvas.width  = width;
-   canvas.height = height;
 
    // register mouse event handlers
    canvas.onmousedown = function(e){ mouse.click = true; };
@@ -59,191 +115,65 @@ document.addEventListener("DOMContentLoaded", function() {
       mouse.move = true;
    };
 
-    // function ReceiveImgData(data) {
-    //     var uint8Arr = new Uint8Array(data);
-    //     var sBinary   = '';
-    //     for (var i = 0; i < uint8Arr.length; i++) {
-    //         sBinary += String.fromCharCode(uint8Arr[i]);
-    //     }
-    //     var base64String = window.btoa(sBinary);
-    // }
-
-
-    // Receive image data
-    // function DrawImgToScreen(data) {
-    //     var base64String = data;
-    //     var img = new Image();
-    //         img.src = base64String;
-    //         img.onload = function() {
-    //             var x = 0, y = 0;
-    //             context.drawImage(this, x, y);
-    //     };
-    // }
-
-
-    // Send image data OUT
-    // byId('send').onclick = DefineImageBinary;    
-    // function DefineImageBinary() {
-    //     var image  = context.getImageData(0, 0, canvas.width, canvas.height);
-    //     var buffer = new ArrayBuffer(image.data.length);
-    //     var bytes  = new Uint8Array(buffer);
-    //     for (var i=0; i<bytes.length; i++) {
-    //         bytes[i] = image.data[i];
-    //     }
-    //     socket.emit('DefineImageBinary', bytes);
-    //     log('sending image binary. bytes: ');
-    //     log(bytes);
-    // } 
-
-
-    // socket.on("DrawImageBinary", function(blob) {
-    //     log('blob is: ');
-    //     log(blob);
-
-    //     var bytes     = new Uint8Array(blob);        
-    //     var imageData = context.createImageData(canvas.width, canvas.height);
-        
-    //     for (var i=8; i<imageData.data.length; i++) {
-    //         imageData.data[i] = bytes[i];
-    //     }
-    //     context.putImageData(imageData, 0, 0);      
-
-    //     // Returning white. No pixel data. 
-    //     // Maybe I need to draw the img on top of the canvas?
-
-    //     //TODO: Or use context.putImageData AFTER the img call?
-    //     var img              = byId('new-image');
-    //     log(img);
-    //         img.height       = canvas.height;
-    //         img.width        = canvas.width;
-    //         img.style.border = "3px solid black";
-    //         img.src          = canvas.toDataURL();
-    //         log('img:');
-    //         log(img);
-    // });
 
 
 
+   // SENDING & RECEIVING
+   /////////////////////////////////////////////////////////
 
 
-    socket.on("DrawImageBinary", function(image) {
-        function convertImageToCanvas(image) {
-            var canvas        = document.createElement("canvas");
-                canvas.width  = image.width;
-                canvas.height = image.height;
-                canvas.getContext("2d").drawImage(image, 0, 0);
+    /**
+     * Convert canvas to data URI containing a representation of the image. Defaults to PNG, 96dpi resolution.
+     * Create a new element, set URI as the source, & pass URI to node server.
+     */
+    function SendAsDiv() {
+        var encodedCanvas    = canvas.toDataURL();
+        var imageElement     = new Image(250, 250);
+            imageElement.src = encodedCanvas;
+        var  payload         = imageElement.outerHTML;
 
-            return canvas;
-        }
-    });
-
-
-
-    function convertCanvasToImage(canvas) {
-        var image = new Image();
-            image.src = canvas.toDataURL("image/png");
-            log('convertCanvasToImage src:' + image.src );
-            log(image);
-        return image;
+        socket.emit('divimg', payload);
     }
 
-    // // Converts canvas to an image
-    // function convertCanvasToImage(canvas, callback) {
-    //     var image = new Image();
-    //     image.onload = function() {
-    //         callback(image);
-    //     };
-    // image.src = canvas.toDataURL("image/png");
-    // }
+     // Receive a rendered <img> element, we render it directly via document.createElement
+     socket.on('divimg', function(image) {
+        var renderedImage           = document.createElement('div');
+            renderedImage.innerHTML = image;
 
-
-    byId('send').onclick = DefineImageBinary;    
-    function DefineImageBinary() {
-        var image  = convertCanvasToImage(canvas);
-        var buffer = new ArrayBuffer(image.data.length);
-        var bytes  = new Uint8Array(buffer);
-
-        for (var i=0; i<bytes.length; i++) {
-            bytes[i] = image.data[i];
-        }
-
-        socket.emit('DefineImageBinary', bytes);
-        log('sending image binary. bytes: ');
-        log(bytes);
-    } 
+        renderToConsole(renderedImage);
+  });
 
 
 
-    // TODO: Need to pass in width and height
-    // socket.on("DrawImageBinary", function(imageData, dx, dy,
-    // dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+    /**
+     * Convert canvas to data URI containing a representation of the image. Defaults to PNG, 96dpi resolution.
+     * Passes URI to node server.
+     * OUTPUT: data:image/png;base64,iVBORw0K......
+     */ 
+    function SendAsBinary() {
+        var encodedCanvas    = canvas.toDataURL();
+        socket.emit('imgBinary', encodedCanvas);
+    }
 
-    //     clearRect();
+     // receive a base64 image, we render it as an Image
+     socket.on('imgBinary', function(image) {
+        var renderedImage     = new Image(250, 250);
+            renderedImage.src = image;
 
-    //     var data   = imageData          || 0;
-    //     var height = window.innerHeight || 0;
-    //     var width  = window.innerWidth  || 0;
-    //     dirtyY = 25;
-    //     dirtyX = 25;
+        renderToConsole(renderedImage);
+  });
 
-    //     dirtyWidth  = dirtyWidth  !== undefined? dirtyWidth: width;
-    //     dirtyHeight = dirtyHeight !== undefined? dirtyHeight: height;
 
-    //     var limitBottom = dirtyY + dirtyHeight;
-    //     var limitRight  = dirtyX + dirtyWidth;
-        
-    //     // TODO: why is nothing happening here?
-    //     for (var y = dirtyY; y < limitBottom; y++) {
-    //         for (var x = dirtyX; x < limitRight; x++) {
-
-    //             var pos = y * width + x;
-    //             context.fillStyle = 'rgba(' + data[pos*4+0]
-    //                                 + ',' +   data[pos*4+1]
-    //                                 + ',' +   data[pos*4+2]
-    //                                 + ',' + ( data[pos*4+3]/255) + ')';
-    //             context.fillRect(x + dx, y + dy, 1, 1);
-    //             }
-    //     }
-    //     log("drawing image");
-    // });
-    
-    
-    
-    
-    // function(blob) {
-    //     log('blob is: ');
-    //     log(blob);
-
-    //     var bytes     = new Uint8Array(blob);        
-    //     var imageData = context.createImageData(canvas.width, canvas.height);
-        
-    //     for (var i=8; i<imageData.data.length; i++) {
-    //         imageData.data[i] = bytes[i];
-    //     }
-    //     context.putImageData(imageData, 0, 0);
-        
-    //     var img        = document.createElement('img');
-    //         img.height = canvas.height;
-    //         img.width  = canvas.width;
-    //         img.src    = canvas.toDataURL();
-    //         log('img:');
-    //         log(img);
-    // });
-
-   // draw line received from server
+    // draw line received from server
 	socket.on('draw_line', function (data) {
-      var line = data.line;
-      context.beginPath();
-      context.moveTo(line[0].x * width, line[0].y * height);
-      context.lineTo(line[1].x * width, line[1].y * height);
-      context.strokeStyle = curColor;
-      context.strokeStyle = data.color;
-      context.stroke();
+        drawLines(data);
    });
 
-
    
-   // main loop, running every 25ms
+   /**
+    * Main loop, running every 25ms
+    * Emits line data to node server, so that other clients can replicate lines
+    */
    function mainLoop() {
       // check if the user is drawing
       if (mouse.click && mouse.move && mouse.pos_prev) {
@@ -258,4 +188,94 @@ document.addEventListener("DOMContentLoaded", function() {
       setTimeout(mainLoop, 25);
    }
    mainLoop();
+
+
+
+    // Un-used support functions around byte data
+    //////////////////////////////////////////////////////////////
+    
+   /**
+    * Called by SendImageToBytes. Creates an image based on convertCanvasToImage.
+    * Canvas -> Image -> Bytes
+    * @return {Uint8Array} Bytes from the newly converted canvas.
+    */
+    function ConvertImgToBytes() {
+        var image  = convertCanvasToImage(canvas);
+        var buffer = new ArrayBuffer(image.data.length);
+        var bytes  = new Uint8Array(buffer);
+
+        for (var i=0; i<bytes.length; i++) {
+            bytes[i] = image.data[i];
+        }
+        debug.log("ConvertImgToBytes:" );
+        Console.log(bytes);
+
+        return bytes;
+    }
+
+    /**
+     * Accepts bytes from server & converts to an image.
+     * @return {ImageData} Image data from byte array
+     */
+    function ConvertBytesToImg (blob) {
+        var bytes     = new Uint8Array(blob);        
+        var imageData = context.createImageData(canvas.width, canvas.height);
+        
+        // Copy bytes to new imageData obj
+        for (var i=8; i<imageData.data.length; i++) {
+            imageData.data[i] = bytes[i];
+        }
+        // This can paint the canvas with the new-found image
+        // context.putImageData(imageData, 0, 0);
+
+        // OR
+
+        // Returns new image    
+        return imageData;
+    }  
+
+  /**
+   * Converts canvas to bytes & emits web socket message
+   * @return {Uint8Array} Bytes from canvas 
+   */     
+  function DefineImageBinary() {
+        var image  = context.getImageData(0, 0, canvas.width, canvas.height);
+        var buffer = new ArrayBuffer(image.data.length);
+        var bytes  = new Uint8Array(buffer);
+
+        for (var i=0; i<bytes.length; i++) {
+            bytes[i] = image.data[i];
+        }
+        log('buffer');
+        log(bytes.buffer);
+
+        log(bytes); 
+        socket.emit('defImgBinary', bytes);
+  }
+
+   /**
+    *  Convert canvas to image, and tell server to convert those bytes to an image
+    */
+   function SendImageToBytes() {    
+         var bytes = ConvertImgToBytes(image);
+        log('sending image binary. bytes: ');
+        log(bytes);
+
+        socket.emit('ConvertedImgToBytes', bytes);
+   }
+
+    // Receive bytes from server, convert them to an image, draw image on canvas
+    socket.on("ConvertBytesToImg", function(bytes) {
+        log('bytes are: ');
+        log(bytes); // RETURNS: Object {0: 24, 1: 24, 2: 29, 3: 255, 4: 24,....}
+                    // TODO: How do I convert that into base64?
+        var imgFromServer = ConvertBytesToImg(bytes);
+        var imageDiv = byId('incomingImg');
+        imageDiv.src = imgFromServer;
+        log(imageDiv); // RETURNS:  [object ImageData]
+    });
+
+
+
+
 });
