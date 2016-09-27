@@ -1,18 +1,60 @@
 document.addEventListener("DOMContentLoaded", function() {
     "use strict";
+    // Short-hand way of getting an element by id. USAGE: byId('element');
     var byId    = function( id ) { return document.getElementById( id ); };
-    var log     = console.log.bind(console);
+    // Short-hand way of writing console.log. USAGE: log('string');
+    var log     = console.log.bind(console);   
+    // Namespace to send / receive socket messages
+    var socket  = io.connect();
     var width   = window.innerWidth;
     var height  = window.innerHeight;
 
+  // Simple IO console element for socket communication
+    var outputConsole = document.querySelector('#output-console');
+    var printToConsole = function (text = '')  {
+        outputConsole.innerHTML += text + '<br/>';
+    };
+    var renderToConsole = function (element) {
+        outputConsole.appendChild(element);
+        outputConsole.innerHTML += '<br/>';
+    };
+
+    // Takes an image, converts to canvas, places on page. We can now draw on that canvas and send via sockets.
     var defaultImg = document.getElementById("defaultImg");
-    var canvas = convertImageToCanvas(defaultImg);
-    var context = canvas.getContext('2d'); 
-
-
+    var canvas     = convertImageToCanvas(defaultImg);
+    var context    = canvas.getContext('2d'); 
     byId("canvasHolder").appendChild(canvas);
-    byId('sendAsDiv').onclick    = SendAsDiv;
+
+    // Event handlers
+    byId('sendAsDiv')  .onclick    = SendAsDiv;
     byId('sendAsBinary').onclick = SendAsBinary;
+
+
+    /** Converts image to canvas.
+     * @param {Image} image - Image to lay on top of canvas
+     * @return {canvas} Canvas w/ image overlay to draw on.
+     */
+    function convertImageToCanvas(image) {
+        var canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+
+        return canvas;
+    }
+
+
+    /**
+     * Converts canvas to an image/
+     * @param {Canvas} canvas - Canvas to convert to Image.
+     * @return {Image} Newly converted image from canvas.
+     */
+    function convertCanvasToImage(canvas) {
+        var image     = new Image();
+            image.src = canvas.toDataURL("image/png");
+
+        return image;
+    }
 
 
    /**
@@ -30,15 +72,12 @@ document.addEventListener("DOMContentLoaded", function() {
       context.stroke();
    }
 
-
    var mouse = { 
       click: false,
       move: false,
       pos: {x:0, y:0},
       pos_prev: false
    };
-
-   var socket  = io.connect();
 
     // Colors
     var colorPurple = "#cb3594";
@@ -61,9 +100,9 @@ document.addEventListener("DOMContentLoaded", function() {
     function goBrown (){ curColor = colorBrown;  }
     function clearCanvas(){
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-         context.drawImage(new Image(), 0, 0); // May not need this
+        //convertImageToCanvas(defaultImg);
+        context.drawImage(new Image(), 0, 0); // May not need this
     }
-
 
    // register mouse event handlers
    canvas.onmousedown = function(e){ mouse.click = true; };
@@ -75,19 +114,6 @@ document.addEventListener("DOMContentLoaded", function() {
       mouse.pos.y = e.clientY / height;
       mouse.move = true;
    };
-
-
-
-
-  // NOTE Simple IO console element for socket communication
-  var outputConsole = document.querySelector('#output-console');
-  var printToConsole = function (text = '')  {
-    outputConsole.innerHTML += text + '<br/>';
-  };
-  var renderToConsole = function (element) {
-    outputConsole.appendChild(element);
-    outputConsole.innerHTML += '<br/>';
-  };
 
 
 
@@ -165,26 +191,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-
-    // Converts canvas to an image
-    function convertCanvasToImage(canvas) {
-        var image = new Image();
-        image.src = canvas.toDataURL("image/png");
-        return image;
-    }
-
-    // Converts image to canvas; returns new canvas element
-    function convertImageToCanvas(image) {
-        var canvas = document.createElement("canvas");
-        canvas.width = image.width;
-        canvas.height = image.height;
-        canvas.getContext("2d").drawImage(image, 0, 0);
-
-        return canvas;
-    }
-
-
-
     // Un-used support functions around byte data
     //////////////////////////////////////////////////////////////
     
@@ -207,7 +213,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return bytes;
     }
 
-
     /**
      * Accepts bytes from server & converts to an image.
      * @return {ImageData} Image data from byte array
@@ -228,7 +233,6 @@ document.addEventListener("DOMContentLoaded", function() {
         // Returns new image    
         return imageData;
     }  
-
 
   /**
    * Converts canvas to bytes & emits web socket message
@@ -259,7 +263,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
         socket.emit('ConvertedImgToBytes', bytes);
    }
-
 
     // Receive bytes from server, convert them to an image, draw image on canvas
     socket.on("ConvertBytesToImg", function(bytes) {
