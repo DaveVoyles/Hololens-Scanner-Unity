@@ -9,24 +9,30 @@ document.addEventListener("DOMContentLoaded", function() {
     var width   = window.innerWidth;
     var height  = window.innerHeight;
 
-  // Simple IO console element for socket communication
+    // Simple IO console element for socket communication
     var outputConsole = document.querySelector('#output-console');
     var printToConsole = function (text = '')  {
         outputConsole.innerHTML += text + '<br/>';
     };
+
+    /**
+     * Draw images received from server to screen.
+     * @param {element} element - Newly created div from server image*/ 
     var renderToConsole = function (element) {
+        outputConsole.innerHTML = '';
         outputConsole.appendChild(element);
         outputConsole.innerHTML += '<br/>';
     };
 
-    // Takes an image, converts to canvas, places on page. We can now draw on that canvas and send via sockets.
+    // Takes an image, converts to canvas, places on page. 
+    // We can now draw on that canvas and send via sockets.
     var defaultImg = document.getElementById("defaultImg");
     var canvas     = convertImageToCanvas(defaultImg);
     var context    = canvas.getContext('2d'); 
     byId("canvasHolder").appendChild(canvas);
 
     // Event handlers
-    byId('sendAsDiv')  .onclick    = SendAsDiv;
+    byId('sendAsDiv')   .onclick = SendAsDiv;
     byId('sendAsBinary').onclick = SendAsBinary;
 
 
@@ -45,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     /**
-     * Converts canvas to an image/
+     * Converts canvas to an image.
      * @param {Canvas} canvas - Canvas to convert to Image.
      * @return {Image} Newly converted image from canvas.
      */
@@ -73,9 +79,9 @@ document.addEventListener("DOMContentLoaded", function() {
    }
 
    var mouse = { 
-      click: false,
-      move: false,
-      pos: {x:0, y:0},
+      click   : false,
+      move    : false,
+      pos     : {x:0, y:0},
       pos_prev: false
    };
 
@@ -105,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
    // register mouse event handlers
-   canvas.onmousedown = function(e){ mouse.click = true; };
+   canvas.onmousedown = function(e){ mouse.click = true;  };
    canvas.onmouseup   = function(e){ mouse.click = false; };
 
    // normalize mouse position to range 0.0 - 1.0
@@ -137,10 +143,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
      // Receive a rendered <img> element, we render it directly via document.createElement
      socket.on('divimg', function(image) {
-        var renderedImage           = document.createElement('div');
-            renderedImage.innerHTML = image;
-
-        renderToConsole(renderedImage);
+         var renderedImage           = document.createElement('div');
+             renderedImage.innerHTML = image;
+             renderToConsole(renderedImage);
   });
 
 
@@ -270,8 +275,8 @@ document.addEventListener("DOMContentLoaded", function() {
         log(bytes); // RETURNS: Object {0: 24, 1: 24, 2: 29, 3: 255, 4: 24,....}
                     // TODO: How do I convert that into base64?
         var imgFromServer = ConvertBytesToImg(bytes);
-        var imageDiv = byId('incomingImg');
-        imageDiv.src = imgFromServer;
+        var imageDiv      = byId('incomingImg');
+            imageDiv.src  = imgFromServer;
         log(imageDiv); // RETURNS:  [object ImageData]
     });
 

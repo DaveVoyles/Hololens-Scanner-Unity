@@ -8,7 +8,7 @@ var server       =  http.createServer(app);
 var io           = socketIo.listen(server);
 var table        = require('console.table');
 var fs           = require('fs');
-server.listen(8080);
+    server.listen(8080);
 var line_history = [];
 var log          = console.log.bind(console);
 var fs           = require('fs');
@@ -32,8 +32,7 @@ io.on('connection', function (socket) {
       line_history.push(data.line);
       io.emit('draw_line', { line: data.line });
    });
-
-   
+  
     socket.on('divimg', (payload) => {
          socket.broadcast.emit('divimg', payload);
     });
