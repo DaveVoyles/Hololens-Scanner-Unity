@@ -1,6 +1,6 @@
 # Interactive overaly for HoloLens video feed
 #### Author(s): Dave Voyles | [@DaveVoyles](http://www.twitter.com/DaveVoyles)
-#### URL: [www.DaveVoyles.com][1]
+#### URL: [www.DaveVoyles.com][http://www.davevoyles.com]
 
 ----------
 ### About
